@@ -8,8 +8,7 @@ use warnings;
 
 our $VERSION = '0.01';
 
-require XSLoader;
-XSLoader::load('ShardedKV::Continuum::Jump', $VERSION);
+use Algorithm::ConsistentHash::JumpHash;
 
 use Moose;
 use JSON::XS qw(encode_json decode_json);
@@ -22,7 +21,7 @@ has '_orig_continuum_spec' => (
 
 sub choose {
     my ($self, $key) = @_;
-    my $idx = ShardedKV::Continuum::Jump::XS::lookup($key, scalar @{$self->_orig_continuum_spec->{ids}});
+    my $idx = Algorithm::ConsistentHash::JumpHash::jumphash_siphash($key, scalar @{$self->_orig_continuum_spec->{ids}});
     return $self->_orig_continuum_spec->{ids}->[$idx];
 }
 

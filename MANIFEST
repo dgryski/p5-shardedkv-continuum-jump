@@ -1,10 +1,5 @@
 Changes
-Jump.xs
 Makefile.PL
 MANIFEST
-ppport.h
-README
 t/ShardedKV-Continuum-Jump.t
-fallback/const-c.inc
-fallback/const-xs.inc
 lib/ShardedKV/Continuum/Jump.pm

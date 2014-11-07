@@ -1,4 +1,3 @@
-Changes
 Makefile.PL
 MANIFEST
 t/ShardedKV-Continuum-Jump.t

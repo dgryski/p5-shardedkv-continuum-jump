@@ -1,6 +1,0 @@
-Revision history for Perl extension ShardedKV::Continuum::Jump.
-
-0.01  Wed Jun 18 16:30:06 2014
-	- original version; created by h2xs 1.23 with options
-		-n ShardedKV::Continuum::Jump ../jump
-

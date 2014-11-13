@@ -19,9 +19,14 @@ has '_orig_continuum_spec' => (
   is => 'ro',
 );
 
+has '_expanded_weights' => (
+  is => 'ro'
+);
+
 sub choose {
     my ($self, $key) = @_;
-    my $idx = Algorithm::ConsistentHash::JumpHash::jumphash_siphash($key, scalar @{$self->_orig_continuum_spec->{ids}});
+    my $idx = Algorithm::ConsistentHash::JumpHash::jumphash_siphash($key, scalar @{$self->_expanded_weights});
+    $idx = $self->{_expanded_weights}->[$idx];
     return $self->_orig_continuum_spec->{ids}->[$idx];
 }
 
@@ -53,8 +58,17 @@ sub extend {
   my $clone_spec = {
     %$orig_spec, # replicas + in case there's other gunk in it, at least make an effort
     ids => [ @{$orig_spec->{ids}} ], # deep clone
+    weights => [ @{$orig_spec->{weights}} ], # deep clone
   };
   push @{ $clone_spec->{ids} }, @{ $spec->{ids} };
+
+  my $weights = $spec->{weights};
+  if (!defined($weights)) {
+      push @$weights, 1 for 1..@{$spec->{ids}};
+  }
+  push @{ $clone_spec->{weights} }, @{ $weights };
+
+  $self->{_expanded_weights} = _expand_weights($clone_spec->{weights});
 
   $self->{_orig_continuum_spec} = $clone_spec;
   return 1;
@@ -70,18 +84,40 @@ sub BUILD {
   my ($self, $args) = @_;
 
   my $from = delete $args->{from};
-  if (ref($from) eq 'HASH') {
-    $self->{_orig_continuum_spec} = $from;
-  } else {
-    die "Invalid 'from' specification for " . __PACKAGE__;
+  $self->_assert_spec_ok($from);
+
+  $self->{_orig_continuum_spec} = $from;
+
+  my $weights = $from->{weights};
+  if (!defined($weights)) {
+      $weights = [];
+      push @$weights, 1 for 1..@{$from->{ids}};
   }
+
+  $from->{weights} = $weights;
+  $self->{_expanded_weights} = _expand_weights($weights);
+}
+
+sub _expand_weights {
+  my ($weights) = @_;
+
+  my @expanded;
+
+  for(my $i=0;$i<@$weights;$i++) {
+    my $w = $weights->[$i];
+    push @expanded, $i for 1..$w;
+  }
+
+  return \@expanded;
 }
 
 sub _assert_spec_ok {
   my ($self, $spec) = @_;
+
   Carp::croak("Continuum spec must be a hash of the form {ids => [qw(node1 node2 node3)]}")
     if not ref($spec) eq 'HASH'
-    or not ref($spec->{ids}) eq 'ARRAY';
+    or not ref($spec->{ids}) eq 'ARRAY'
+    or (defined($spec->{weights}) && (ref($spec->{weights}) ne 'ARRAY' || @{$spec->{ids}} != @{$spec->{weights}}));
   return 1;
 }
 

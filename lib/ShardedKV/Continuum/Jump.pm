@@ -134,12 +134,13 @@ __END__
     continuum => ShardedKV::Continuum::Jump->new(
       from => {
         ids => [qw(node1 node2 node3 node4)],
+        weights => [ 10, 20, 20, 40 ], # optional
       }
     ),
     storages => {...},
   );
   ...
-  $skv->extend({ids => [qw(node5 node6 node7)]});
+  $skv->extend({ids => [qw(node5 node6 node7)], weights => [ 50, 50, 50 ] });
 
 
 =head1 DESCRIPTION
@@ -149,6 +150,8 @@ A continuum implementation based on Google's Jump consistent hashing algorithm.
 It uses SipHash to turn the string keys into 64-bit integers.
 
 Note that the *order* of shard IDs is significant, unlike with other continuum implementations.  This is a limitation of the Jump algorithm.
+
+Note also that node weights, if provided, *must be* in the same order as corresponding ids.  Weights are provided to account for nodes of differing capacity and may not be altered once established.
 
 =head1 SEE ALSO
 
